@@ -1,0 +1,15 @@
+{
+  "section": "DQN_MlpPolicy",
+  "world_file": "absim/valid5.dat",
+  "max_epoch": 50,
+  "step_per_epoch": 4000,
+  "collect_per_step": 5,
+  "buffer_size": 80000,
+  "policy_network": "Mlp16x2",
+  "optim": "Adam",
+  "algorithm": "DQNPolicy",
+  "learning_rate": 0.005,
+  "lr_schedule": "constant",
+  "gamma": 0.99,
+  "base_model": ""
+}
