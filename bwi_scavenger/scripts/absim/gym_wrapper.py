@@ -17,8 +17,8 @@ class AbstractSim(gym.Env):
         self.agent.setup()
 
         self.action_space = gym.spaces.Discrete(len(self.world.graph.nodes))
-        self.observation_space = gym.spaces.Box(np.array([0]*(len(self.world.graph.nodes)+1)),
-                                                np.array([len(self.world.graph.nodes)]*(len(self.world.graph.nodes)+1)),
+        self.observation_space = gym.spaces.Box(np.array([-1]*(len(self.world.graph.nodes))),
+                                                np.array([1]*(len(self.world.graph.nodes))),
                                                 dtype=np.float32)
 
     def reset(self):
@@ -34,7 +34,7 @@ class AbstractSim(gym.Env):
         for node in self.agent.world.graph.nodes:
             obs.append(self.agent.arrangement_space.prob_any_obj(node))
         obs = [0 if self.agent.visited_count[i] > 0 else o for i, o in enumerate(obs)]
-        obs.append(self.agent.loc)
+        obs[self.agent.loc] = -1
         return obs
 
     def step(self, action):
@@ -78,7 +78,9 @@ class RandomMap(gym.Wrapper):
         self.cost_range = cost_range
         self.objects_range = objects_range
         self.occurrences_range = occurrences_range
-
+        self.action_space = gym.spaces.Discrete(len(self.world.graph.nodes))
+        self.observation_space = gym.spaces.Box(np.array([-1]*(len(self.world.graph.nodes)*2)),
+                                                np.array([1]*(len(self.world.graph.nodes)*2)),                                                dtype=np.float32)
     def get_cost_map(self):
         return [self.env.agent.world.graph.cost(self.env.agent.loc, node)/500.0 \
                 if node != self.env.agent.loc else 0 \
@@ -95,3 +97,8 @@ class RandomMap(gym.Wrapper):
     def step(self, action):
         obs, rew, done, info = self.env.step(action)
         return obs + self.get_cost_map(), rew, done, info
+
+
+wrapper_dict = {
+    "RandomMap": RandomMap
+}

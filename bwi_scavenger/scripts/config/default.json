@@ -1,11 +1,18 @@
 {
   "section": "DQN_MlpPolicy",
-  "world_file": "absim/valid5.dat",
-  "max_epoch": 50,
+  "world_file": "hunts/",
+  "wrapper": "RandomMap",
+  "wrapper_args": {
+    "nodes_range": [8, 8],
+    "cost_range": [50, 500],
+    "objects_range": [4, 4],
+    "occurrences_range": [1, 4]
+  },
+  "max_epoch": 80,
   "step_per_epoch": 4000,
   "collect_per_step": 5,
   "buffer_size": 80000,
-  "policy_network": "Mlp16x2",
+  "policy_network": "Mlp64x2",
   "optim": "Adam",
   "algorithm": "DQNPolicy",
   "learning_rate": 0.005,

@@ -1,4 +1,4 @@
-from absim.gym_wrapper import AbstractSim
+from absim.gym_wrapper import AbstractSim, wrapper_dict
 
 import numpy
 import tianshou as ts
@@ -38,10 +38,14 @@ with open(os.path.join(save_path, 'config.json'), 'w') as fp:
 
 writer = SummaryWriter(save_path)
 
-env = AbstractSim(world_file = config['world_file'])
-
-train_envs = ts.env.VectorEnv([lambda: AbstractSim(world_file = config['world_file']) for _ in range(1)])
-test_envs = ts.env.VectorEnv([lambda: AbstractSim(world_file = config['world_file']) for _ in range(10)])
+if config['wrapper']:
+    env = wrapper_dict[config['wrapper']](AbstractSim(world_file = config['world_file']+'train.dat'))
+    train_envs = ts.env.VectorEnv([lambda:wrapper_dict[config['wrapper']](AbstractSim(world_file = config['world_file']+'train.dat')) for _ in range(1)])
+    test_envs = ts.env.VectorEnv([lambda: wrapper_dict[config['wrapper']](AbstractSim(world_file = config['world_file']+'test.dat')) for _ in range(10)])
+else:
+    env = AbstractSim(world_file = config['world_file'])
+    train_envs = ts.env.VectorEnv([lambda: AbstractSim(world_file = config['world_file']) for _ in range(1)])
+    test_envs = ts.env.VectorEnv([lambda: AbstractSim(world_file = config['world_file']) for _ in range(10)])
 
 state_shape = env.observation_space.shape or env.observation_space.n
 action_shape = env.action_space.shape or env.action_space.n
