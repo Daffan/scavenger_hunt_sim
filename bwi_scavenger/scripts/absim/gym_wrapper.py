@@ -80,7 +80,7 @@ class RandomMap(gym.Wrapper):
         self.occurrences_range = occurrences_range
         self.action_space = gym.spaces.Discrete(len(self.world.graph.nodes))
         self.observation_space = gym.spaces.Box(np.array([-1]*(len(self.world.graph.nodes)*2)),
-                                                np.array([1]*(len(self.world.graph.nodes)*2)),                                                dtype=np.float32)
+                                                np.array([1]*(len(self.world.graph.nodes)*2)), dtype=np.float32)
     def get_cost_map(self):
         return [self.env.agent.world.graph.cost(self.env.agent.loc, node)/500.0 \
                 if node != self.env.agent.loc else 0 \
@@ -98,7 +98,54 @@ class RandomMap(gym.Wrapper):
         obs, rew, done, info = self.env.step(action)
         return obs + self.get_cost_map(), rew, done, info
 
+class RandomMapFullMap(gym.Wrapper):
+    '''A wrapper of the original gym env that generate a new random hunt problem
+    at the beginning of epsiode and append the cost map to the observation state
+    (assume agent knows the map)
+    args:
+        some parameters when generate the new hunt problem
+    '''
+
+    def __init__(self, env, nodes_range = nodes_range, cost_range = cost_range,
+                objects_range = objects_range, occurrences_range = occurrences_range,
+                world_file = 'hunts/gym.dat'):
+
+        super(RandomMapFullMap, self).__init__(env)
+        self.generator = lambda: generate(world_file, nodes_range, cost_range,
+                                            objects_range, occurrences_range)
+        self.world_file = world_file
+        self.cost_range = cost_range
+        self.objects_range = objects_range
+        self.occurrences_range = occurrences_range
+        self.action_space = gym.spaces.Discrete(len(self.world.graph.nodes))
+        num_node = len(self.world.graph.nodes)
+        self.cost_map_full = self.get_cost_map_full()
+        self.observation_space = gym.spaces.Box(np.array([-1]*(num_node*(num_node+1))),\
+                                                np.array([1]*(num_node*(num_node+1))), dtype=np.float32)
+
+    def get_cost_map_single_node(self, node):
+        return [self.env.agent.world.graph.cost(n, node)/500.0 \
+                if n != node else 0 for n in self.agent.world.graph.nodes]
+
+    def get_cost_map_full(self):
+        m = []
+        for n in self.agent.world.graph.nodes:
+            m += self.get_cost_map_single_node(n)
+        return m
+
+    def reset(self):
+
+        self.generator()
+        self.env.world, self.env.hunt, self.env.start_loc = parse_world(self.world_file)
+        self.env.agent = agent.Agent(self.env.world, self.env.hunt,
+                                    self.env.world.node_id(self.env.start_loc))
+        return self.env.reset() + self.cost_map_full
+
+    def step(self, action):
+        obs, rew, done, info = self.env.step(action)
+        return obs + self.cost_map_full, rew, done, info
 
 wrapper_dict = {
-    "RandomMap": RandomMap
+    "RandomMap": RandomMap,
+    "RandomMapFullMap": RandomMapFullMap
 }

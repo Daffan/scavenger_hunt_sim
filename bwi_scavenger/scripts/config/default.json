@@ -1,7 +1,7 @@
 {
   "section": "DQN_MlpPolicy",
   "world_file": "hunts/",
-  "wrapper": "RandomMap",
+  "wrapper": "RandomMapFullMap",
   "wrapper_args": {
     "nodes_range": [8, 8],
     "cost_range": [50, 500],

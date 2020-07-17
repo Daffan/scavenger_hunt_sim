@@ -9,6 +9,7 @@ from absim.prob_prox_agent import ProbProxAgent
 from absim.salesman_agent import SalesmanAgent
 from absim.dqn_agent import DQNAgent
 from absim.dqn_map_agent import DQNMapAgent
+from absim.dqn_map_full import DQNMapFullAgent
 
 agent_lookup = {
     "prob" : ProbAgent,
@@ -17,7 +18,8 @@ agent_lookup = {
     "salesman" : SalesmanAgent,
     "bayes" : BayesianAgent,
     'dqn' : DQNAgent,
-    "dqn_map": DQNMapAgent
+    "dqn_map": DQNMapAgent,
+    "dqn_map_full": DQNMapFullAgent
 }
 
 
