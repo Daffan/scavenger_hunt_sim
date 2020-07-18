@@ -39,9 +39,9 @@ with open(os.path.join(save_path, 'config.json'), 'w') as fp:
 writer = SummaryWriter(save_path)
 
 if config['wrapper']:
-    env = wrapper_dict[config['wrapper']](AbstractSim(world_file = config['world_file']+'train.dat'))
-    train_envs = ts.env.VectorEnv([lambda:wrapper_dict[config['wrapper']](AbstractSim(world_file = config['world_file']+'train.dat')) for _ in range(1)])
-    test_envs = ts.env.VectorEnv([lambda: wrapper_dict[config['wrapper']](AbstractSim(world_file = config['world_file']+'test.dat')) for _ in range(10)])
+    env = wrapper_dict[config['wrapper']](AbstractSim(), config["wrapper_args"], world_file = config['world_file']+'train.dat')
+    train_envs = ts.env.VectorEnv([lambda:wrapper_dict[config['wrapper']](AbstractSim(), config["wrapper_args"], world_file = config['world_file']+'train.dat') for _ in range(1)])
+    test_envs = ts.env.VectorEnv([lambda: wrapper_dict[config['wrapper']](AbstractSim(), config["wrapper_args"], world_file = config['world_file']+'test.dat') for _ in range(10)])
 else:
     env = AbstractSim(world_file = config['world_file'])
     train_envs = ts.env.VectorEnv([lambda: AbstractSim(world_file = config['world_file']) for _ in range(1)])

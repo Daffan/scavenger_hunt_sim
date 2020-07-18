@@ -1,12 +1,13 @@
 {
   "section": "DQN_MlpPolicy",
   "world_file": "hunts/",
-  "wrapper": "RandomMapFullMap",
+  "wrapper": "RandomMapMultiRun",
   "wrapper_args": {
     "nodes_range": [8, 8],
     "cost_range": [50, 500],
     "objects_range": [4, 4],
-    "occurrences_range": [1, 4]
+    "occurrences_range": [1, 4],
+    "env_runs": 100
   },
   "max_epoch": 80,
   "step_per_epoch": 4000,

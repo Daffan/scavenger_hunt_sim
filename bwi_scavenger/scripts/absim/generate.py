@@ -10,12 +10,29 @@ def sample(ls):
 def distribute(count):
     if count == 1:
         return [100]
+    p = None
+    p_total = 0
+    d = []
+    for i in range(count):
+        if p is None:
+            p = random.randint(0, 100)
+        elif i < count - 1:
+            p = random.randint(0, 100 - p_total)
+        else:
+            p = 100 - p_total
+        p_total += p
+        d.append(p)
+    return d
+'''
+def distribute(count):
+    if count == 1:
+        return [100]
     p = [0] + [random.randint(0, 100) for _ in range(count-1)] + [100]
     p = sorted(p)
     d = [p[i]-p[i-1] for i in range(1, len(p))]
-     
-    return d
 
+    return d
+'''
 
 def generate(fname, nodes_range, cost_range, objects_range, occurrences_range):
     out = open(fname, "w")

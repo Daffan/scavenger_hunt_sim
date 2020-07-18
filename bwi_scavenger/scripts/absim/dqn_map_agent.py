@@ -6,7 +6,7 @@ import numpy as np
 from tianshou_policies import *
 
 policy_net = 'Mlp64x2'
-state_dict_path = './results/DQN_MlpPolicy_2020_07_15_17_35/dqn.pth'
+state_dict_path = './results/DQN_MlpPolicy_2020_07_18_00_06/dqn.pth'
 
 class DQNMapAgent(agent.Agent):
     """The probability-greedy agent visits the location with the highest
