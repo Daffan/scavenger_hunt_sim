@@ -59,6 +59,11 @@ if config['algorithm'] == 'DQNPolicy':
     policy = ts.policy.DQNPolicy(policy_net, optim,
                                 discount_factor=config['gamma'], estimation_step=3,
                                 use_target_network=True, target_update_freq=512)
+elif config['algorithm'] == 'PGPolicy':
+    policy = ts.policy.PGPolicy(policy_net, optim,
+                                discount_factor=config['gamma'])
+elif config['algorithm'] == 'PPOPolicy':
+    policy = ts.policy.PPOPolicy(policy_net, optim, discount_factor=config['gamma'])
 
 if config['base_model']:
     state_dict = torch.load('./results/' + config['base_model'] + '/dqn.pth')
@@ -67,15 +72,26 @@ if config['base_model']:
 train_collector = ts.data.Collector(policy, train_envs, ts.data.ReplayBuffer(size=config['buffer_size']))
 test_collector = ts.data.Collector(policy, test_envs)
 
-result = ts.trainer.offpolicy_trainer(
-    policy, train_collector, test_collector,
-    max_epoch=config['max_epoch'],
-    step_per_epoch=config['step_per_epoch'],
-    collect_per_step=config['collect_per_step'],
-    episode_per_test=200, batch_size=64,
-    train_fn=lambda e: policy.set_eps(max(0.02, 1-0.1*e)),
-    test_fn=lambda e: policy.set_eps(0.0),
-    save_fn=lambda e: torch.save(policy.state_dict(), save_path + '/dqn.pth'),
-    # stop_fn=lambda x: x >= env.spec.reward_threshold,
-    writer=writer)
+if config['algorithm'] == 'DQNPolicy':
+    result = ts.trainer.offpolicy_trainer(
+        policy, train_collector, test_collector,
+        max_epoch=config['max_epoch'],
+        step_per_epoch=config['step_per_epoch'],
+        collect_per_step=config['collect_per_step'],
+        episode_per_test=200, batch_size=64,
+        train_fn=lambda e: policy.set_eps(max(0.02, 1-0.1*e)),
+        test_fn=lambda e: policy.set_eps(0.0),
+        save_fn=lambda e: torch.save(policy.state_dict(), save_path + '/dqn.pth'),
+        # stop_fn=lambda x: x >= env.spec.reward_threshold,
+        writer=writer)
+else:
+    result = ts.trainer.onpolicy_trainer(
+        policy, train_collector, test_collector,
+        max_epoch=config['max_epoch'],
+        step_per_epoch=config['step_per_epoch'],
+        collect_per_step=config['collect_per_step'],
+        repeat_per_collect = 1, 
+        episode_per_test=200, batch_size=64,
+        save_fn=lambda e: torch.save(policy.state_dict(), save_path + '/model.pth'),
+        writer = writer)
 print(f'Finished training! Use {result["duration"]}')

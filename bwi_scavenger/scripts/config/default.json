@@ -1,5 +1,5 @@
 {
-  "section": "DQN_MlpPolicy",
+  "section": "PG_MlpPolicy",
   "world_file": "hunts/",
   "wrapper": "RandomMapMultiRun",
   "wrapper_args": {
@@ -15,8 +15,8 @@
   "buffer_size": 80000,
   "policy_network": "Mlp64x2",
   "optim": "Adam",
-  "algorithm": "DQNPolicy",
-  "learning_rate": 0.005,
+  "algorithm": "PGPolicy",
+  "learning_rate": 0.001,
   "lr_schedule": "constant",
   "gamma": 0.99,
   "base_model": ""
