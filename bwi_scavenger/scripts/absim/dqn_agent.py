@@ -5,8 +5,8 @@ import torch
 import numpy as np
 from tianshou_policies import *
 
-policy_net = 'Mlp32x2'
-state_dict_path = './results/DQN_MlpPolicy_2020_07_13_16_19/dqn.pth'
+policy_net = 'Mlp16x2'
+state_dict_path = './results/DQN_3_1_withmap_2020_07_27_00_14/dqn.pth'
 
 class DQNAgent(agent.Agent):
     """The probability-greedy agent visits the location with the highest
@@ -15,7 +15,7 @@ class DQNAgent(agent.Agent):
     """
     def setup(self):
         super().setup()
-        state_shape = len(self.world.graph.nodes) + 1
+        state_shape = len(self.world.graph.nodes)
         action_shape = len(self.world.graph.nodes)
 
         state_dict = {}
@@ -31,7 +31,7 @@ class DQNAgent(agent.Agent):
         for node in self.world.graph.nodes:
             obs.append(self.arrangement_space.prob_any_obj(node))
         obs = [0 if self.visited_count[i] > 0 else o for i, o in enumerate(obs)]
-        obs.append(self.loc)
+        obs[self.loc] = -1
         return torch.tensor([obs])
 
     def choose_next_loc(self):

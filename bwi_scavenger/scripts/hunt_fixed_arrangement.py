@@ -1,16 +1,17 @@
 import argparse
 import time
 import absim.world as world
-from absim.generate import generate
 
 from absim.bayesian_agent import BayesianAgent
 from absim.prob_agent import ProbAgent
 from absim.prox_agent import ProxAgent
 from absim.prob_prox_agent import ProbProxAgent
 from absim.salesman_agent import SalesmanAgent
+from absim.optimal_agent import OptimalAgent
 from absim.dqn_agent import DQNAgent
 from absim.dqn_map_agent import DQNMapAgent
 from absim.dqn_map_full import DQNMapFullAgent
+from absim.dqn_16x16_agent import DQN16x16Agent
 
 agent_lookup = {
     "prob" : ProbAgent,
@@ -18,9 +19,11 @@ agent_lookup = {
     "prob_prox" : ProbProxAgent,
     "salesman" : SalesmanAgent,
     "bayes" : BayesianAgent,
+    "optimal": OptimalAgent,
     'dqn' : DQNAgent,
     "dqn_map": DQNMapAgent,
-    "dqn_map_full": DQNMapFullAgent
+    "dqn_map_full": DQNMapFullAgent,
+    "dqn_16x16": DQN16x16Agent
 }
 
 
@@ -132,6 +135,19 @@ def parse_world(fname):
 
     return w, hunt, start_loc
 
+# Event Index
+events = [
+[2, 2, 0, 1],
+[2, 2, 3, 0],
+[2, 2, 3, 0],
+[2, 2, 2, 1],
+[2, 2, 3, 0],
+[2, 1, 1, 0],
+[2, 1, 2, 0],
+[1, 2, 3, 1],
+[2, 2, 1, 0],
+[1, 2, 2, 0],
+]
 
 def simulate(world, hunt, start_loc, args):
     """Runs one or more scavenger hunts.
@@ -162,22 +178,30 @@ def simulate(world, hunt, start_loc, args):
         print(">>> Running %s trials of %s" % \
             (trials, agent.__class__.__name__))
 
-    for i in range(trials):
-        t_start, t_end = None, None
+    for i, es in enumerate(events):
+
         world.populate()
-        #### Check the placement of objects ####
-        # for e in world.arrangement:
-        #     print('obj: %s, loc: %d' %(e.obj, e.locs[0]))
-        # print('\n')
+        world.occurrences = {}
+        for loc in world.graph.nodes:
+            world.occurrences[loc] = []
+        print('running experiment %d' %(i))
+        for j, e in enumerate(es):
+            event = world.distrs[j].events[e]
+            world.arrangement[j] = event
+            for loc in event.locs:
+                world.occurrences[world.node_id(loc)].append(event.obj)
+        for e in world.arrangement:
+            print('obj: %s, loc: %d, prob: %.2f' %(e.obj, e.locs[0], e.prob))
+
+        t_start, t_end = None, None
         agent.setup()
         t_start = time.time()
-        count = 0
         while not agent.done():
-            count += 1
+            print(agent.loc, end = ' -->  ')
             agent.objs_at_loc = world.objs_at(agent.loc)
             agent.run()
-            if count >= 100:
-                break
+        print('\n')
+        print(agent.travel_distance)
         t_end = time.time()
         total_distance += agent.travel_distance
         total_runtime += t_end - t_start
@@ -197,9 +221,8 @@ def simulate(world, hunt, start_loc, args):
 if __name__ == "__main__":
     # Parse cmdline args
     ap = argparse.ArgumentParser()
+    ap.add_argument("datfile", help="scavenger hunt world file", type=str)
     ap.add_argument("agent", help="algorithm to run", type=str)
-    ap.add_argument("-e", "--envs", help="number of environments to run", type=int,
-        default=1)
     ap.add_argument("-t", "--trials", help="number of trials to run", type=int,
         default=1)
     ap.add_argument("--seed", help="random seed", type=int,
@@ -210,25 +233,8 @@ if __name__ == "__main__":
         action='store_true')
     args = ap.parse_args()
 
-    size = 10
-    nodes_range = [size, size]
-    cost_range = [0, size*100]
-    objects_range = [size, size]
-    occurrences_range = [1, size]
-
     import random
-    import numpy as np
     random.seed(args.seed)
-    np.random.seed(args.seed)
-
-    avg_distance_list = []
-    for i in range(args.envs):
-        # Generate a new random scavenger hunt problem and simulate
-        generate('hunts/s_%d/%d_%d.dat' %(size, size, i), nodes_range = nodes_range,
-                cost_range = cost_range, objects_range = objects_range,
-                occurrences_range = occurrences_range)
-        world0, hunt, start_loc = parse_world('hunts/test.dat')
-        # avg_distance_list.append(simulate(world0, hunt, start_loc, args))
-
-    # print('Run %d trials on %d environments: %.2f' %(args.trials, args.envs,\
-    #         sum(avg_distance_list)/len(avg_distance_list)))
+    # Generate scavenger hunt problem and simulate
+    world, hunt, start_loc = parse_world(args.datfile)
+    simulate(world, hunt, start_loc, args)

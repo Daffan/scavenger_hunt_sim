@@ -1,16 +1,37 @@
-
 import random
-import math
-import numpy as np, numpy.random
+
 
 def sample(ls):
     item = random.choice(ls)
     ls.remove(item)
     return item
 
-# Distribute probabilities uniformly with Dirichlet distribution
+'''
 def distribute(count):
-    return np.random.dirichlet(np.ones(count),size=1)[0]
+    if count == 1:
+        return [100]
+    p = None
+    p_total = 0
+    d = []
+    for i in range(count):
+        if p is None:
+            p = random.randint(0, 100)
+        elif i < count - 1:
+            p = random.randint(0, 100 - p_total)
+        else:
+            p = 100 - p_total
+        p_total += p
+        d.append(p)
+    return d
+'''
+def distribute(count):
+    if count == 1:
+        return [100]
+    p = [0] + [random.randint(0, 100) for _ in range(count-1)] + [100]
+    p = sorted(p)
+    d = [p[i]-p[i-1] for i in range(1, len(p))]
+
+    return d
 
 
 def generate(fname, nodes_range, cost_range, objects_range, occurrences_range):
@@ -21,26 +42,14 @@ def generate(fname, nodes_range, cost_range, objects_range, occurrences_range):
     start_marked = False
     c_nodes = random.randint(nodes_range[0], nodes_range[1])
     nodes = []
-    points = []
-
     for i in range(c_nodes):
         node = "l%s" % i
-
-        # Generate a random point
-        point = (random.randrange(0, cost_range[1], 1), random.randrange(0, cost_range[1], 1))
-
-        index = 0
-
-        # Get distances between each point
-        for point2 in points:
-            cost = math.sqrt((point2[0] - point[0])**2 + (point2[1] - point[1])**2)
+        for j in range(i + 1, c_nodes):
+            cost = random.randint(cost_range[0], cost_range[1])
             start = "*" if not start_marked else ""
+            out.write("%s%s l%s %s\n" % (node, start, j, cost))
             start_marked = True
-            out.write("%s%s l%s %s\n" %(node, start, index, cost))
-            index = index + 1
-
         nodes.append(node)
-        points.append(point)
 
     # Distribution
     out.write("\n[distr]\n")
@@ -50,16 +59,16 @@ def generate(fname, nodes_range, cost_range, objects_range, occurrences_range):
         occurrences = random.randint(occurrences_range[0], occurrences_range[1])
         locs = nodes.copy()
         p = distribute(occurrences)
-        for j in range(len(p)):
-            out.write("%s %s " % (sample(locs), p[j]))
+        for j in range(occurrences):
+            out.write("%s %s " % (sample(locs), p[j] / 100))
         out.write("\n")
 
 
 if __name__ == "__main__":
-    nodes_range = [5, 5]
-    cost_range = [50, 200]
+    nodes_range = [8, 8]
+    cost_range = [50, 500]
     objects_range = [4, 4]
-    occurrences_range = [1, 3]
+    occurrences_range = [1, 4]
 
     import sys
     generate(sys.argv[1],

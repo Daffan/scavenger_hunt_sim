@@ -9,7 +9,7 @@ from absim.generate import generate
 
 class AbstractSim(gym.Env):
 
-    def __init__(self, world_file = 'absim/bwi.dat'):
+    def __init__(self, world_file = 'hunts/bwi.dat'):
         super(AbstractSim, self).__init__()
         self.world, self.hunt, self.start_loc = parse_world(world_file)
         self.agent = agent.Agent(self.world, self.hunt, self.world.node_id(self.start_loc))
@@ -60,6 +60,29 @@ wrapper_args = {
     "objects_range": [4, 4],
     "occurrences_range": [1, 4]
 }
+
+class WithMap(gym.Wrapper):
+    '''Given the cost map from current node to all other node as the observation
+    '''
+
+    def __init__(self, env, wrapper_args, world_file):
+
+        super(WithMap, self).__init__(env)
+        self.cost_range = wrapper_args['cost_range'][1]
+        self.action_space = gym.spaces.Discrete(len(self.world.graph.nodes))
+        self.observation_space = gym.spaces.Box(np.array([-1]*(len(self.world.graph.nodes)*2)),
+                                                np.array([1]*(len(self.world.graph.nodes)*2)), dtype=np.float32)
+    def get_cost_map(self):
+        return [self.env.agent.world.graph.cost(self.env.agent.loc, node)/self.cost_range \
+                if node != self.env.agent.loc else 0 \
+                for node in self.agent.world.graph.nodes]
+
+    def reset(self):
+        return self.env.reset() + self.get_cost_map()
+
+    def step(self, action):
+        obs, rew, done, info = self.env.step(action)
+        return obs + self.get_cost_map(), rew, done, info
 
 class RandomMap(gym.Wrapper):
     '''A wrapper of the original gym env that generate a new random hunt problem
@@ -156,7 +179,7 @@ class RandomMapFullMap(gym.Wrapper):
         self.world_file = world_file
         self.cost_range = wrapper_args["cost_range"]
         self.objects_range = wrapper_args["objects_range"]
-        self.occurrences_range = wrapper_args["occurrences_range"] 
+        self.occurrences_range = wrapper_args["occurrences_range"]
         self.action_space = gym.spaces.Discrete(len(self.world.graph.nodes))
         num_node = len(self.world.graph.nodes)
         self.cost_map_full = self.get_cost_map_full()
@@ -188,5 +211,6 @@ class RandomMapFullMap(gym.Wrapper):
 wrapper_dict = {
     "RandomMap": RandomMap,
     "RandomMapFullMap": RandomMapFullMap,
-    "RandomMapMultiRun": RandomMapMultiRun
+    "RandomMapMultiRun": RandomMapMultiRun,
+    "WithMap": WithMap
 }

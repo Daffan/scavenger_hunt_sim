@@ -7,9 +7,11 @@ from absim.prob_agent import ProbAgent
 from absim.prox_agent import ProxAgent
 from absim.prob_prox_agent import ProbProxAgent
 from absim.salesman_agent import SalesmanAgent
+from absim.optimal_agent import OptimalAgent
 from absim.dqn_agent import DQNAgent
 from absim.dqn_map_agent import DQNMapAgent
 from absim.dqn_map_full import DQNMapFullAgent
+from absim.dqn_16x16_agent import DQN16x16Agent
 
 agent_lookup = {
     "prob" : ProbAgent,
@@ -17,9 +19,11 @@ agent_lookup = {
     "prob_prox" : ProbProxAgent,
     "salesman" : SalesmanAgent,
     "bayes" : BayesianAgent,
+    "optimal": OptimalAgent,
     'dqn' : DQNAgent,
     "dqn_map": DQNMapAgent,
-    "dqn_map_full": DQNMapFullAgent
+    "dqn_map_full": DQNMapFullAgent,
+    "dqn_16x16": DQN16x16Agent
 }
 
 
@@ -131,6 +135,18 @@ def parse_world(fname):
 
     return w, hunt, start_loc
 
+arrangements = [
+[2, 2, 3, 0],
+[2, 2, 6, 1],
+[2, 2, 6, 1],
+[2, 2, 4, 0],
+[2, 2, 6, 1],
+[2, 5, 1, 1],
+[2, 5, 4, 1],
+[5, 2, 6, 0],
+[2, 2, 1, 1],
+[5, 2, 4, 1],
+]
 
 def simulate(world, hunt, start_loc, args):
     """Runs one or more scavenger hunts.
@@ -170,9 +186,14 @@ def simulate(world, hunt, start_loc, args):
         # print('\n')
         agent.setup()
         t_start = time.time()
+        count = 0
         while not agent.done():
+            count += 1
+            # print(agent.loc)
             agent.objs_at_loc = world.objs_at(agent.loc)
             agent.run()
+            if count >= 50:
+                break
         t_end = time.time()
         total_distance += agent.travel_distance
         total_runtime += t_end - t_start
@@ -196,7 +217,7 @@ if __name__ == "__main__":
     ap.add_argument("agent", help="algorithm to run", type=str)
     ap.add_argument("-t", "--trials", help="number of trials to run", type=int,
         default=1)
-    ap.add_argument("-seed", help="random seed", type=int,
+    ap.add_argument("--seed", help="random seed", type=int,
         default=None)
     ap.add_argument("-s", "--suppress", help="silence output",
         action='store_true')

@@ -39,9 +39,9 @@ with open(os.path.join(save_path, 'config.json'), 'w') as fp:
 writer = SummaryWriter(save_path)
 
 if config['wrapper']:
-    env = wrapper_dict[config['wrapper']](AbstractSim(), config["wrapper_args"], world_file = config['world_file']+'train.dat')
-    train_envs = ts.env.VectorEnv([lambda:wrapper_dict[config['wrapper']](AbstractSim(), config["wrapper_args"], world_file = config['world_file']+'train.dat') for _ in range(1)])
-    test_envs = ts.env.VectorEnv([lambda: wrapper_dict[config['wrapper']](AbstractSim(), config["wrapper_args"], world_file = config['world_file']+'test.dat') for _ in range(10)])
+    env = wrapper_dict[config['wrapper']](AbstractSim(world_file = config['world_file']), config["wrapper_args"], world_file = config['world_file']+'train.dat')
+    train_envs = ts.env.VectorEnv([lambda:wrapper_dict[config['wrapper']](AbstractSim(world_file = config['world_file']), config["wrapper_args"], world_file = config['world_file']+'train.dat') for _ in range(1)])
+    test_envs = ts.env.VectorEnv([lambda: wrapper_dict[config['wrapper']](AbstractSim(world_file = config['world_file']), config["wrapper_args"], world_file = config['world_file']+'test.dat') for _ in range(10)])
 else:
     env = AbstractSim(world_file = config['world_file'])
     train_envs = ts.env.VectorEnv([lambda: AbstractSim(world_file = config['world_file']) for _ in range(1)])
@@ -54,6 +54,12 @@ policy_net = policies_dic[config['policy_network']](state_shape, action_shape)
 
 if config['optim'] == 'Adam':
     optim = torch.optim.Adam(policy_net.parameters(), lr=config['learning_rate'])
+
+if config['lr_schedule'] == 'linear':
+    func = lambda e: (1-e/config['max_epoch'])
+else:
+    func = lambda e: 1
+scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=func)
 
 if config['algorithm'] == 'DQNPolicy':
     policy = ts.policy.DQNPolicy(policy_net, optim,
@@ -79,7 +85,7 @@ if config['algorithm'] == 'DQNPolicy':
         step_per_epoch=config['step_per_epoch'],
         collect_per_step=config['collect_per_step'],
         episode_per_test=200, batch_size=64,
-        train_fn=lambda e: policy.set_eps(max(0.02, 1-0.1*e)),
+        train_fn=lambda e: [policy.set_eps(max(0.02, 1-0.1*e)), scheduler.step()],
         test_fn=lambda e: policy.set_eps(0.0),
         save_fn=lambda e: torch.save(policy.state_dict(), save_path + '/dqn.pth'),
         # stop_fn=lambda x: x >= env.spec.reward_threshold,
@@ -90,8 +96,9 @@ else:
         max_epoch=config['max_epoch'],
         step_per_epoch=config['step_per_epoch'],
         collect_per_step=config['collect_per_step'],
-        repeat_per_collect = 1, 
+        repeat_per_collect = 1,
         episode_per_test=200, batch_size=64,
+        train_fn=lambda e: scheduler.step(),
         save_fn=lambda e: torch.save(policy.state_dict(), save_path + '/model.pth'),
         writer = writer)
 print(f'Finished training! Use {result["duration"]}')
